@@ -6,7 +6,7 @@ export default class ModuleCollection {
     // register root module (Vuex.Store options)
     this.register([], rawRootModule, false)
   }
-
+  // 根据 path，取到对应的 module
   get (path) {
     return path.reduce((module, key) => {
       return module.getChild(key)
@@ -24,23 +24,33 @@ export default class ModuleCollection {
   update (rawRootModule) {
     update([], this.root, rawRootModule)
   }
-
+  /**
+   * 
+   * @param {*} path 根 module 的 path 为 ''，子 moudle 的 path 为 parent module 的 Key + 当前 module 的 key
+   * @param {*} rawModule 当前处理的 module，初始值为 root module
+   * @param {*} runtime
+   */
   register (path, rawModule, runtime = true) {
     if (__DEV__) {
       assertRawModule(path, rawModule)
     }
-
+    // 为当前 rawModule 创建一个 Module 实例
     const newModule = new Module(rawModule, runtime)
     if (path.length === 0) {
+    // 设置 root module
       this.root = newModule
     } else {
+    // 对于子 module，需要建立父子关系
+    // 取到 parent module，将 newModule 作为 child
       const parent = this.get(path.slice(0, -1))
       parent.addChild(path[path.length - 1], newModule)
     }
 
     // register nested modules
+    // 递归便利子 modules
     if (rawModule.modules) {
       forEachValue(rawModule.modules, (rawChildModule, key) => {
+        // key 为 module 的 name
         this.register(path.concat(key), rawChildModule, runtime)
       })
     }

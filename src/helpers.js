@@ -12,9 +12,11 @@ export const mapState = normalizeNamespace((namespace, states) => {
     console.error('[vuex] mapState: mapper parameter must be either an Array or an Object')
   }
   normalizeMap(states).forEach(({ key, val }) => {
+    // 生成一个 computed 函数
     res[key] = function mappedState () {
       let state = this.$store.state
       let getters = this.$store.getters
+      // 如果有 namespace，那么 state 和 getters 重置为 对应 module 上的 state 和 getters
       if (namespace) {
         const module = getModuleByNamespace(this.$store, 'mapState', namespace)
         if (!module) {
@@ -23,9 +25,10 @@ export const mapState = normalizeNamespace((namespace, states) => {
         state = module.context.state
         getters = module.context.getters
       }
+      // 返回对应的结果
       return typeof val === 'function'
-        ? val.call(this, state, getters)
-        : state[val]
+        ? val.call(this, state, getters) // 如果 mapState({ key: val }) 的 val 传递的是一个函数
+        : state[val] // 如果 mapState({ key: val }) 的 val 传递的是一个字符串
     }
     // mark vuex getter for devtools
     res[key].vuex = true
@@ -45,9 +48,11 @@ export const mapMutations = normalizeNamespace((namespace, mutations) => {
     console.error('[vuex] mapMutations: mapper parameter must be either an Array or an Object')
   }
   normalizeMap(mutations).forEach(({ key, val }) => {
+    // 生成一个 method
     res[key] = function mappedMutation (...args) {
       // Get the commit method from store
       let commit = this.$store.commit
+      // 如果配置了 namespace，那么 commit 需要拿对应 module.context 上的 commit
       if (namespace) {
         const module = getModuleByNamespace(this.$store, 'mapMutations', namespace)
         if (!module) {
@@ -56,8 +61,8 @@ export const mapMutations = normalizeNamespace((namespace, mutations) => {
         commit = module.context.commit
       }
       return typeof val === 'function'
-        ? val.apply(this, [commit].concat(args))
-        : commit.apply(this.$store, [val].concat(args))
+        ? val.apply(this, [commit].concat(args))  // mapMutations({ add: (commit) => commit('add') }) 的情况下 val 为 function
+        : commit.apply(this.$store, [val].concat(args)) // mapMutations(['add', 'multipy']) 的情况下 val 为字符串
     }
   })
   return res
@@ -77,6 +82,7 @@ export const mapGetters = normalizeNamespace((namespace, getters) => {
   normalizeMap(getters).forEach(({ key, val }) => {
     // The namespace has been mutated by normalizeNamespace
     val = namespace + val
+    // 生成 computed 属性
     res[key] = function mappedGetter () {
       if (namespace && !getModuleByNamespace(this.$store, 'mapGetters', namespace)) {
         return
@@ -108,6 +114,7 @@ export const mapActions = normalizeNamespace((namespace, actions) => {
     res[key] = function mappedAction (...args) {
       // get dispatch function from store
       let dispatch = this.$store.dispatch
+      // 如果指定 namespace，那么 dispatch 需要取用对应 module.context 上面的 dispatch
       if (namespace) {
         const module = getModuleByNamespace(this.$store, 'mapActions', namespace)
         if (!module) {
@@ -173,6 +180,7 @@ function normalizeNamespace (fn) {
     } else if (namespace.charAt(namespace.length - 1) !== '/') {
       namespace += '/'
     }
+    // namespace 表示使用哪个 module
     return fn(namespace, map)
   }
 }

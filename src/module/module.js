@@ -7,10 +7,12 @@ export default class Module {
     // Store some children item
     this._children = Object.create(null)
     // Store the origin module object which passed by programmer
+    // module._rawModule 为原始的配置
     this._rawModule = rawModule
     const rawState = rawModule.state
 
     // Store the origin module's state
+    // module.state
     this.state = (typeof rawState === 'function' ? rawState() : rawState) || {}
   }
 
